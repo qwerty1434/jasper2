@@ -1,0 +1,169 @@
+---
+layout: post
+current: post
+cover:  assets/images/tags.jpg
+navigation: True
+title: yolo
+date: 2018-07-10 23:23:00
+tags: [Machine_Learning]
+class: post-template
+subclass: 'post tag-getting-started'
+author: qwerty1434
+---
+
+{% highlight ruby %}
+def show
+  @widget = Widget(params[:id])
+  respond_to do |format|
+    format.html # show.html.erb
+    format.json { render json: @widget }
+  end
+end
+{% endhighlight %}
+참조 : https://jekyllrb-ko.github.io/docs/posts/
+
+
+
+<!요소요소에 사진 넣기>
+
+
+
+yolo코드 출처: https://pjreddie.com/darknet/yolo/ 
+작업 코드: https://github.com/qwerty1434/Person_Reocognition/
+
+서비스설명 : 음식점에서 손님과 대화하면서 음식주문을 받는 인공지능을 개발하는 작업으로,
+제가 맡은 코드는 손님이 자리에 앉았는지 를 판단해 주는 api입니다
+식당에 설치한 카메라에서 주기적으로 사진을 받고 이미지를 분석해 사진에서 사람이 인식된다면 대화서비스가 시작됩니다
+
+
+원리: 
+기본적인 구조는 Django와 Yolo의 코드를 결합시킨 형태입니다
+
+웹버젼에서는 두가지 페이지가 있습니다
+
+이미지를 선택해 POST형식으로 다음 페이지로 넘겨주면 (이 부분이 안드로이드를 통해 모바일에서 사진을 넘기는 게 됩니다)
+이 과정에서 이미지는 photos폴더에 저장됩니다
+<웹페이지 polls사진>
+photos에 저장된 이미지를 가져와 yolo의 이미지 분석 코드가 실행되고 분석결과를 json형태로 return해 줍니다
+<웹페이지 polls/result사진>
+
+    
+    
+=======================================추가작업사항==================================
+안드로이드에서 파일을 전송할 때 이미지로 보내는건 자원낭비가 심해서 바이너리 처리를 하기로 했다
+기본 : 안드로이드에서 사진전송 -> photos에 사진저장 -> photos사진을 가져와 yolo분석
+수정방향 : 안드로이드에서 binary형태의 사진전송-> binary를 사진으로 변환시켜 yolo분석(이미지가 따로 저장되지 않는다, 혹 내가 임의로 저장시켜줘야한다)
+즉 binary to image ,image to binary가 
+    postman binary형식 파일전송
+
+엄청난 삽질끝에 완성했다 결론은 다음과 같다 
+내가 삽질을 한 이유는 request를 HttpResponse로 받은 채로 해결하려 했기 때문이다
+나는 HttpResponse를 감싼 데이터가 Postman전송시 이미지를 그대로 뿌려주길래 그걸 사용해야 된다고 生角했다
+도움을 주시는 분이 request와 HttpResponse가 뭔지 물어보셨을때 아무대답도 못했다 사실 뭔지모르고 그냥썼다
+조금더 개념을 이해하고 작업할 필요가 있는거 같다(공부해야 할 내용이 정말 너무나도 많다)
+두번째 이유는 파일을 만들지 않고 해결하고 싶은 욕심때문에
+이 경우도 HttpResponse로 계속 삽질하고 있어서 혼자 완성하지 못했을 가능성이 크지만 그래도 파일을 만드는 접근을 시도했다면 좀 더 빨리 만들 수 있었을지도 母르겠다
+지금은 계속해서 test.jpg라는 하나의 파일에 덮어씌워지는 과정인데 도움을 주신 분이 이게 좋은 작업은 아니라고 한다
+만약 다시 작업한다면 넘어오는 파일의 이름을 받아서 그 파일 이름으로 저장하는 과정이 필요할 것이다
+@csrf_exempt
+def binary_receive(request):
+    im = request
+    f = open('./polls/test.jpg','wb+')
+    f.write(request.read())
+    f.close()
+    return HttpResponse(cliHandler('test.jpg'))
+
+코드를 다시 적어보니 너무 간단해서 화가 날 지경이다
+이러한 삽질을 하지않게 해줄 개념이해의 중요성을 다시금 느끼게 됩니다
+  
+binary로 보내는 파일 = request 인거 같습니다??
+  
+request를 encoding해서 cliHandler(request)하면 될거로   
+  결국 content-type의 문제였띠???!
+  
+  nohub
+    
+    
+    
+코드설명:
+1.
+제가 사용한 yolo 코드의 원리는 ->->->순으로 작업이 진행됩니다
+기존 코드는 이미지에 box를 친 새로운 이미지를 생성해 주는데
+저는 빠른 분석이 필요하기 때문에 (기존 코드 이름)이 아닌 (지금 쓰는 코드 이름return_predict였나?)를 사용해 분석 결과값만 받아오고 있습니다
+(지금쓰는코드이름)의 OO부분을 보이는 것처럼 수정해 label이 person이고 confidence가 50%이상인 결과값만을 return 하고 있습니다
+(사진)  
+2.
+defaults.py의 내용을 수정했습니다
+(기존코드 사진(or코드, 공홈에 있던거 아니면 youtube에 있던거) - flow.py --model = ,,,이런거였던거 같음)
+기존코드는 args를 요구하는데 장고로 실행하기 위해서는 이를 defuaults속성으로 부여해 args입력을 안해도 되게 했습니다
+
+실행방법:
+1.설치
+    필요한 모듈은 크게 6가지 입니다: cuda(gpu를 사용한다면), opencv, Django, Tesnorflow, yolo, darkflow
+    github파일에 requirements.txt가 있지만 필요하지 않은 모듈도 많이 포함되어 있습니다
+    (처음 각자 다른container환경에서 작업하다가 container가 작업중간에 날라가 버려서 부득이하게 컨테이너가 아닌 하나의 도커에 작업을 진행하게 되었고 이 과정에서 여러 모듈이 설치되어 있는 pip를 freeze했기 때문입니다 ㅠㅠ)
+    그래서 파이썬에 대한 기본적인 이해가 있으신 분들이라면 위 4가지 모듈을 설치하고 추가적으로 필요한 모듈은 일단 실행해보고 추가적으로 없다고 나오는 모듈들을 pip로 설치하기를 권장드립니다(저도 container에서 작업하던거 날리고 새로 docker에 설치할 때 이 방식으로 북구했습니다~)
+    
+2.weight추가
+    github에는 yolo의 weight파일이 너무커서 올라가지 않았습니다
+    그래서 weight가 있어야 할 bin 폴더에 weight파일을 넣어야 합니다
+    remote환경에서 설치하는 과정이여서 저는 명령어로 다운받았습니다
+    >> curl -o yolo.weights https://pjreddie.com/media/files/yolov2.weights 로 했습니다
+    (GUI로 할 수 있는걸 왜 굳이 이런명령어가 있는지 예전에 궁금한 적이 있었는데 이런 상황을 위해서 였군요!)
+    그냥 다운받으시는 분들은 공식 홈페이지(https://pjreddie.com/darknet/yolo/) 에서 YOLOv2 608x608를 다운받은 후 이름을 yolo.weights로 변경해 넣어주시면 됩니다
+    아니면 본인이 직접 weight를 만들어서 활용해도 됩니다(프로그램이 조금 무거운거같아 이거 할려했는데 일단은 gpu사용으로 시간을 줄여서 보류중입니다) (weight만드는법 : 링크걸어주기)
+3.실행
+    장고에 yolo를 심었기 때문에 장고를 실행시켜주면 됩니다
+    >> python manage.py runserver 0.0.0.0:8000
+    '0.0.0.0:포트' 를 뒤에 추가해 주시면 remote에서 접속이 가능합니다
+    0.0.0.0이 외부접근을 허용합니다 라는 뜻, 8000은 포트번호인데 꼭 8000이 아닌 자신이 원하는 포트를 뚫어서 사용하셔도 됩니다 (저는 사실 잘 몰라서 서버 작업하시는 분이 뚫어준 포트를 착실히 사용했습니다) 
+    웹에서 확인하고자 하면 코드가 실행시켜놓고 localhost:8000/polls 를 들어가거나
+    외부접속을 하실려면 <실행한 컴퓨터의 ip주소>:8000/polls로 들어가시면 됩니다
+ 
+
+이정도 설명은 마무리하고 개인적으로 작업하면서 개인적으로 든 생각을 얘기해 보겠습니다
+    (뭔얘기쓸지 좀더 생각해보기)
+1.
+작업을 통해 배운것  : 안드로이드와의 연동을 위한 api 개발 (api가 뭔지 아직 잘 모르겠는데 html로 만들면 api다?) // postman
+Docker와 container 환경에서의 작업
+Yolo코드 - 거의 완전해부 완료
+Django - 멋사가 많이 도움이되네
+GPU setting
+이외에 버그수정, 코드설계 등 많은걸 배울 수 있었다
+    
+2.
+우격다짐으로 할려고 하면 다 할 수 있다
+3.
+협업은 힘든 일이다 (팀원도망 // 내 작업이 안되면 클라이언트에서 진행을 못하시더라)
+공모전 참여로 다른곳에서도 협업하고 있는데 이게 어쩔수 없이 효율이 잘 나지 않는거 같다(결국 한명의 코드가 채택?되는느낌) -조직에서 배운그거 예로들자<사진도 있으면 첨부>
+2에서 어떻게든 만들었다 했는데 그래서 남들이 고생을 많이했다 (클라이언트부분 postman확인, 최적화과정에서 토니님이랑 한 삽질)
+    
+4.다른 작업사항이 있었는데 못해봐서 아쉽다
+    앞서말한 weight파일 
+    personal detection : 코드를 구해서 실행해 봤는데 (링크) 결국 사용하지는 못했다 ->사용했더라면 개인맞춤형, 단골손님용 으로 사용될 예정이였다
+    
+=====================앞으로 수정사항 생기면==================
++ 수정 
+    이렇게 맨 밑에 수정사하 적고 코드링크는 github에 최신코드로, 바뀐부분 작업 사진 
+
+  pip install Django
+  pip install tensorflow
+  no module named corsheaders -> pip install django-cors-headers
+  no module named cv2 -> pip install opencv-python
+  no module named 'darkflow.cython_utils.cy_yolo_findhoxed' -> python setup.py build_ext --inplace  (pip uninstall darkflow)
+
+  1.새로운 파일 만들고 views,urls랑 연동하기
+  2.Index.html에서 보내는 경로를 61.85.36.59를 localhost말고 내주소로 고치기
+  3.cli.py에서 photos경로 다시잡아주기
+ 
+  
+  <발표준비>
+   0.cv파트
+   1.이론설명(작동원리)
+   안드로이드 사진전송 -> Yolo api -> 
+   1-1. 작업내용
+    yolo, Django->api, 
+   2.서비스에서 어떤방향으로 활용되는지
+   3.시연영상
+   
+postman작업 지금까지 어떻게 했는지도 적기
