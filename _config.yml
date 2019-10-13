@@ -10,7 +10,7 @@ baseurl: '../' #'../'
 # Website info
 title: qwerty1434
 description: 데이터 분석가
-cover: /assets/images/under_repairs.png
+cover: /assets/images/speeches.jpg
 logo: /assets/images/blog-icon.png
 logo_dark: /assets/images/favicon.png
 favicon: /assets/images/favicon.png
